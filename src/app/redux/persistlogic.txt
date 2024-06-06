@@ -1,0 +1,53 @@
+---- store.js ----
+const { configureStore, combineReducers } = require("@reduxjs/toolkit");
+import usersReducer from './slice'
+import todoReducer from './todoSlice'
+// persist-setup
+import { persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist'
+import storage from 'redux-persist/lib/storage' // defaults to localStorage for web
+
+const persistConfig = {
+    key: 'root',
+    storage,
+}
+
+const rootReducer = combineReducers({
+    userData: usersReducer,
+    todoData: todoReducer,
+})
+
+const persistedReducer = persistReducer(persistConfig, rootReducer)
+
+export const store = configureStore({
+    reducer:persistedReducer,
+    middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+            serializableCheck: {
+                ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+            },
+        }),
+})
+
+------ providers.js ------
+'use client'
+import { store } from "./store";
+
+const { Provider } = require("react-redux");
+import { persistStore } from 'redux-persist'
+import { PersistGate } from 'redux-persist/integration/react'
+
+export function Providers({children}){
+    let persistor = persistStore(store)
+    return(
+        <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+                {children}
+            </PersistGate>
+        </Provider>
+    )
+}
+
+- i did not use persist logic because it is slowing my app
+- and ssr is not working due to persist 
+= so, instead i used localStorage with useEffect() logic in client comp and
+= with a new setInitialUsers action in slice.js
